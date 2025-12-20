@@ -1,0 +1,129 @@
+TÀI LI?U API FRONTEND
+(WEB BÁN HÀNG ONLINE)
+Ngày c?p nh?t: 17/12/2025
+Tính nang m?i: Tích h?p logic Thành viên VIP & Gi?m giá t? d?ng.
+ 
+1. L?y danh sách s?n ph?m (Trang ch?)
+Mô t?: L?y danh sách túi xách d? hi?n th?. H? tr? l?c, tìm ki?m, s?p x?p.
+Method:  GET 	URL: /api/products/
+Yêu c?u Login: KHÔNG
+2. K?t qu? thành công (HTTP 200/201)
+[
+  {
+    "id": 1,
+    "ten_tui": "Túi Da Cá S?u Luxury",
+    "gia_tien": 15000000,
+    "so_luong_ton": 5,
+    "mo_ta": "Da th?t cao c?p...",
+    "hinh_anh": "http://localhost:8000/media/tui1.jpg",
+    "danh_muc": { "id": 1, "ten_danh_muc": "Túi Da" }
+  },
+  {
+    "id": 2,
+    "ten_tui": "Túi V?i Canvas",
+    "gia_tien": 500000,
+    "so_luong_ton": 20,
+    "hinh_anh": "http://localhost:8000/media/tui2.jpg",
+    "danh_muc": { "id": 2, "ten_danh_muc": "Túi V?i" }
+  }
+]
+// Các param h? tr? l?c:
+// ?search=Gucci
+// ?gia_tien__gte=1000000 (Giá t? 1tr tr? lên)
+// ?ordering=-gia_tien (S?p x?p giá gi?m d?n)
+3. Các l?i thu?ng g?p
+•	Luôn tr? v? danh sách (R?ng n?u không tìm th?y).
+ 
+2. Xem Profile & H?ng Thành Viên
+Mô t?: L?y thông tin cá nhân và ki?m tra xem khách dang ? H?ng nào d? hi?n th? uu dãi.
+Method:  GET 	URL: /api/profile/
+Yêu c?u Login: CÓ (Header: Authorization: Bearer <access_token>)
+2. K?t qu? thành công (HTTP 200/201)
+{
+  "id": 10,
+  "username": "nguyenvana",
+  "ho_ten": "Nguy?n Van A",
+  "so_dien_thoai": "0909123456",
+  "email": "ana@gmail.com",
+  "dia_chi": "123 Ðu?ng Láng, Hà N?i",
+  "tong_chi_tieu": 12000000, 
+  "hang_thanh_vien": "VIP Vàng (Gi?m 10%)", // Hi?n th? cái này lên Web
+  "muc_giam_gia": 10 // Dùng s? này d? tính nh?m cho khách xem tru?c
+}
+3. Các l?i thu?ng g?p
+•	HTTP 401 Unauthorized: Token không h?p l? ho?c dã h?t h?n.
+ 
+3. Ð?t hàng (Checkout)
+Mô t?: G?i gi? hàng lên server. H? th?ng s? t? d?ng tính toán gi?m giá (n?u là VIP) và t?o don hàng.
+Method:  POST 	URL: /api/my-orders/
+Yêu c?u Login: CÓ (Header: Authorization: Bearer <access_token>)
+1. D? li?u g?i lên (Body JSON)
+{
+  "cart_items": [
+    { "id": 1, "quantity": 1 }, // Mua 1 cái túi ID 1
+    { "id": 5, "quantity": 2 }  // Mua 2 cái túi ID 5
+  ],
+  "ho_ten": "Nguy?n Van A",
+  "sdt": "0909123456",
+  "dia_chi": "Nhà s? 5, Ngõ 1, Hà N?i",
+  "payment_method": "COD",
+  "ghi_chu": "Giao gi? hành chính"
+}
+2. K?t qu? thành công (HTTP 200/201)
+{
+  "success": true,
+  "message": "Ð?t hàng thành công",
+  "order_code": "WEB-1702881234",
+  "payment_info": {
+    "tong_tien_hang": 20000000, // T?ng giá tr? hàng
+    "phan_tram": 10,            // Ðu?c gi?m 10% (Do là VIP Vàng)
+    "giam_gia": 2000000,        // S? ti?n du?c tr?
+    "thanh_tien": 18000000      // S? ti?n khách ph?i tr?
+  }
+}
+3. Các l?i thu?ng g?p
+•	- HTTP 400: "Gi? hàng tr?ng"
+- HTTP 400: "S?n ph?m X ch? còn 1 cái" (H?t hàng)
+- HTTP 400: "L?i tài kho?n khách hàng" 
+ 
+4. Xem L?ch s? don hàng
+Mô t?: L?y danh sách các don hàng khách dã mua.
+Method:  GET 	URL: /api/my-orders/
+Yêu c?u Login: CÓ (Header: Authorization: Bearer <access_token>)
+2. K?t qu? thành công (HTTP 200/201)
+{
+  "success": true,
+  "data": [
+    {
+      "id": 55,
+      "ma_hoa_don": "WEB-1702881234",
+      "ngay_tao": "2025-12-17T14:30:00Z",
+      "trang_thai": "CHO_XAC_NHAN",
+      "trang_thai_text": "Ch? xác nh?n",
+      "tong_tien_hang": 20000000,
+      "giam_gia": 2000000,
+      "thanh_tien": 18000000,
+      "chi_tiet": [
+         { "ten_san_pham": "Túi Gucci", "so_luong": 1, ... }
+      ]
+    }
+  ]
+}
+3. Các l?i thu?ng g?p
+•	HTTP 401 Unauthorized.
+ 
+5. H?y Ðon Hàng
+Mô t?: Khách t? h?y don khi don chua du?c duy?t. Ði?m tích luy s? b? tr? l?i.
+Method:  POST 	URL: /api/my-orders/{id}/cancel/
+Yêu c?u Login: CÓ (Header: Authorization: Bearer <access_token>)
+1. D? li?u g?i lên (Body JSON)
+{}
+2. K?t qu? thành công (HTTP 200/201)
+{
+  "success": true,
+  "message": "Ðã h?y don hàng"
+}
+3. Các l?i thu?ng g?p
+•	- HTTP 400: "Ðon hàng dã du?c x? lý, không th? h?y"
+- HTTP 404: Không tìm th?y don hàng.
+

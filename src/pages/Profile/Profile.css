@@ -1,0 +1,297 @@
+.profile-page {
+    padding: var(--spacing-2xl) 0 var(--spacing-3xl);
+    min-height: 70vh;
+}
+
+.profile-page h1 {
+    margin-bottom: var(--spacing-xl);
+}
+
+.not-logged-in {
+    text-align: center;
+    padding: var(--spacing-3xl);
+}
+
+.not-logged-in h2 {
+    margin-bottom: var(--spacing-sm);
+}
+
+.not-logged-in p {
+    color: var(--gray-500);
+    margin-bottom: var(--spacing-xl);
+}
+
+.profile-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: var(--spacing-xl);
+    align-items: start;
+}
+
+/* Sidebar */
+.profile-sidebar {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    box-shadow: var(--shadow-sm);
+}
+
+.profile-avatar {
+    text-align: center;
+    padding-bottom: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.avatar {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto var(--spacing-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--accent), var(--accent-light));
+    color: var(--white);
+    font-size: 2rem;
+    font-weight: 600;
+    border-radius: var(--radius-full);
+}
+
+.profile-avatar h3 {
+    margin-bottom: var(--spacing-xs);
+}
+
+.profile-avatar p {
+    color: var(--gray-500);
+    font-size: 0.9rem;
+}
+
+.profile-nav {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    color: var(--gray-600);
+    font-size: 0.95rem;
+    transition: all var(--transition-fast);
+    width: 100%;
+    text-align: left;
+}
+
+.nav-item:hover {
+    background: var(--gray-100);
+    color: var(--accent);
+}
+
+.nav-item.active {
+    background: rgba(201, 162, 39, 0.1);
+    color: var(--accent);
+    font-weight: 500;
+}
+
+.nav-item.logout {
+    color: var(--error);
+}
+
+.nav-item.logout:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Content */
+.profile-content {
+    min-height: 400px;
+}
+
+.content-card {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    box-shadow: var(--shadow-sm);
+}
+
+.content-card h2 {
+    margin-bottom: var(--spacing-xl);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-xl);
+    margin-bottom: var(--spacing-xl);
+}
+
+.info-item label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--gray-500);
+    margin-bottom: var(--spacing-xs);
+}
+
+.info-item p {
+    font-weight: 500;
+    color: var(--gray-800);
+}
+
+.edit-profile-btn {
+    display: inline-flex;
+}
+
+/* VIP Badge Section */
+.vip-badge-section {
+    background: linear-gradient(135deg, rgba(201, 162, 39, 0.1) 0%, rgba(201, 162, 39, 0.05) 100%);
+    border: 1px solid rgba(201, 162, 39, 0.25);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-xl);
+    text-align: center;
+}
+
+.vip-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    color: var(--white);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-radius: var(--radius-full);
+    font-weight: 600;
+    font-size: 0.95rem;
+    box-shadow: 0 2px 8px rgba(201, 162, 39, 0.3);
+}
+
+.vip-badge svg {
+    color: var(--white);
+}
+
+.discount-note {
+    margin-top: var(--spacing-sm);
+    font-size: 0.9rem;
+    color: var(--accent-dark);
+}
+
+.discount-note strong {
+    color: var(--success);
+    font-size: 1rem;
+}
+
+/* Total Spent */
+.info-item.full-width {
+    grid-column: 1 / -1;
+}
+
+.total-spent {
+    font-size: 1.25rem !important;
+    font-weight: 700 !important;
+    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Message */
+.profile-message {
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--spacing-lg);
+    font-size: 0.9rem;
+}
+
+.profile-message.success {
+    background: rgba(34, 197, 94, 0.1);
+    color: #16a34a;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.profile-message.error {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.profile-message.info {
+    background: rgba(59, 130, 246, 0.1);
+    color: #2563eb;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+/* Edit Form */
+.edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.edit-form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.edit-form label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--gray-700);
+}
+
+.edit-form input,
+.edit-form textarea {
+    padding: var(--spacing-md);
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    transition: all var(--transition-fast);
+}
+
+.edit-form input:focus,
+.edit-form textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.1);
+}
+
+.edit-form input.disabled-input {
+    background: var(--gray-100);
+    color: var(--gray-500);
+    cursor: not-allowed;
+}
+
+.edit-form small {
+    font-size: 0.8rem;
+    color: var(--gray-500);
+}
+
+.edit-form textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.form-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    padding-top: var(--spacing-md);
+}
+
+.form-actions .btn {
+    flex: 1;
+    max-width: 150px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .profile-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+}

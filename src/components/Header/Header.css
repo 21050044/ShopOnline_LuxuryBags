@@ -1,0 +1,313 @@
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--header-height);
+    background: var(--white);
+    box-shadow: var(--shadow-sm);
+    z-index: 1000;
+}
+
+.header-container {
+    max-width: var(--container-max);
+    height: 100%;
+    margin: 0 auto;
+    padding: 0 var(--spacing-lg);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Logo */
+.logo {
+    display: flex;
+    align-items: center;
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.logo-text {
+    color: var(--primary);
+}
+
+.logo-accent {
+    color: var(--accent);
+}
+
+/* Navigation */
+.nav {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xl);
+}
+
+.nav-link {
+    position: relative;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--gray-700);
+    padding: var(--spacing-sm) 0;
+    transition: color var(--transition-fast);
+}
+
+.nav-link:hover {
+    color: var(--accent);
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--accent);
+    transition: width var(--transition-fast);
+}
+
+.nav-link:hover::after {
+    width: 100%;
+}
+
+/* Header Actions */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.action-btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-full);
+    color: var(--gray-700);
+    transition: all var(--transition-fast);
+}
+
+.action-btn:hover {
+    background: var(--gray-100);
+    color: var(--accent);
+}
+
+/* Cart Badge */
+.cart-btn {
+    position: relative;
+}
+
+.cart-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    background: var(--accent);
+    color: var(--white);
+    font-size: 0.7rem;
+    font-weight: 600;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* User Menu */
+.user-menu {
+    position: relative;
+}
+
+.user-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 200px;
+    background: var(--white);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    padding: var(--spacing-sm);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all var(--transition-fast);
+}
+
+.user-menu:hover .user-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.user-name {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.85rem;
+    color: var(--gray-500);
+    border-bottom: 1px solid var(--gray-200);
+    margin-bottom: var(--spacing-xs);
+}
+
+.dropdown-item {
+    display: block;
+    width: 100%;
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: 0.9rem;
+    color: var(--gray-700);
+    border-radius: var(--radius-sm);
+    text-align: left;
+    transition: all var(--transition-fast);
+}
+
+.dropdown-item:hover {
+    background: var(--gray-100);
+    color: var(--accent);
+}
+
+.logout-btn {
+    color: var(--error);
+}
+
+/* Mobile Menu Toggle */
+.menu-toggle {
+    display: none;
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+}
+
+.hamburger {
+    position: relative;
+    width: 24px;
+    height: 2px;
+    background: var(--gray-700);
+    transition: all var(--transition-fast);
+}
+
+.hamburger::before,
+.hamburger::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--gray-700);
+    transition: all var(--transition-fast);
+}
+
+.hamburger::before {
+    top: -7px;
+}
+
+.hamburger::after {
+    bottom: -7px;
+}
+
+.hamburger.active {
+    background: transparent;
+}
+
+.hamburger.active::before {
+    top: 0;
+    transform: rotate(45deg);
+}
+
+.hamburger.active::after {
+    bottom: 0;
+    transform: rotate(-45deg);
+}
+
+/* Search Bar */
+.search-bar {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--white);
+    padding: var(--spacing-md) var(--spacing-lg);
+    box-shadow: var(--shadow-md);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all var(--transition-fast);
+}
+
+.search-bar.search-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.search-form {
+    max-width: 600px;
+    margin: 0 auto;
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.search-input {
+    flex: 1;
+    padding: var(--spacing-md);
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    transition: border-color var(--transition-fast);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.search-submit {
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--accent);
+    color: var(--white);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background var(--transition-fast);
+}
+
+.search-submit:hover {
+    background: var(--accent-dark);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .nav {
+        position: fixed;
+        top: var(--header-height);
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--white);
+        flex-direction: column;
+        justify-content: flex-start;
+        padding: var(--spacing-xl);
+        gap: var(--spacing-lg);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateX(-100%);
+        transition: all var(--transition-base);
+    }
+
+    .nav.nav-open {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(0);
+    }
+
+    .nav-link {
+        font-size: 1.2rem;
+    }
+
+    .menu-toggle {
+        display: flex;
+    }
+}
