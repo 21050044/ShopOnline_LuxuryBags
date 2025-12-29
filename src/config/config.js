@@ -1,9 +1,6 @@
-// API Configuration
-// Thay đổi API_BASE_URL khi deploy
-
 const config = {
     // Backend API URL
-    API_BASE_URL: 'https://necessarily-neon-grammar-harmony.trycloudflare.com',
+    API_BASE_URL: 'https://indicated-climbing-marketing-explanation.trycloudflare.com',
 
     // AI Generate API URL (riêng)
     AI_API_URL: 'http://localhost:8080',
