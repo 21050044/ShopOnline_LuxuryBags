@@ -478,3 +478,106 @@ export const generateAIArt = async (canvas) => {
         return { success: false, error: err.message };
     }
 };
+
+// ==================== COLLECTION API ====================
+
+/**
+ * Lấy danh sách bộ sưu tập
+ */
+export const getStaffCollection = async () => {
+    try {
+        const url = `${config.API_BASE_URL}/api/staff-collection/`;
+        const response = await fetch(url, {
+            headers: getAuthHeaders(),
+        });
+
+        const result = await handleResponse(response);
+        return { success: true, data: result.data || result };
+    } catch (error) {
+        console.error('Error fetching collection:', error);
+        return { success: false, error: error.message };
+    }
+};
+
+/**
+ * Lưu thiết kế vào bộ sưu tập
+ * @param {File} imageFile 
+ * @param {string} note 
+ */
+export const saveToCollection = async (imageFile, note = '') => {
+    try {
+        const url = `${config.API_BASE_URL}/api/staff-collection/`;
+        const formData = new FormData();
+        formData.append('file_anh', imageFile, 'design.png');
+        if (note) {
+            formData.append('ghi_chu', note);
+        }
+
+        const token = localStorage.getItem('access_token');
+        const headers = {};
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: headers,
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            console.error('API error:', text);
+            throw new Error(`Lỗi API: ${response.status} ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        return { success: true, data: result };
+    } catch (error) {
+        console.error('Error saving to collection:', error);
+        return { success: false, error: error.message };
+    }
+};
+
+/**
+ * Xóa thiết kế khỏi bộ sưu tập
+ * @param {number|string} id 
+ */
+export const deleteFromCollection = async (id) => {
+    try {
+        const url = `${config.API_BASE_URL}/api/staff-collection/${id}/`;
+        const response = await fetch(url, {
+            method: 'DELETE',
+            headers: getAuthHeaders(),
+        });
+
+        if (response.ok) {
+            return { success: true };
+        }
+        const error = await response.text();
+        throw new Error(error);
+    } catch (error) {
+        console.error('Error deleting from collection:', error);
+        return { success: false, error: error.message };
+    }
+};
+
+// ==================== UTILS ====================
+
+/**
+ * Convert Google Drive link to embeddable URL
+ */
+export const convertGoogleDriveLink = (url) => {
+    if (!url) return '';
+    if (url.includes('drive.google.com')) {
+        const idMatch = url.match(/id=([^&]+)/);
+        if (idMatch) {
+            return `https://drive.google.com/uc?export=view&id=${idMatch[1]}`;
+        }
+        const fileIdMatch = url.match(/\/d\/([^/]+)/);
+        if (fileIdMatch) {
+            return `https://drive.google.com/uc?export=view&id=${fileIdMatch[1]}`;
+        }
+    }
+    return url;
+};

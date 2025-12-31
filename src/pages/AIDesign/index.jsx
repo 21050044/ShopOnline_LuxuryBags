@@ -1,9 +1,243 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { generateAIArt } from '../../services/api';
-import './AIDesign.css';
+import { useNavigate } from 'react-router-dom';
+import { generateAIArt, saveToCollection, getStaffCollection, deleteFromCollection, convertGoogleDriveLink } from '../../services/api';
+import styles from './index.module.css';
+
+// SVG Icons
+const Icon = ({ name, size = 20, color = 'currentColor' }) => {
+    const icons = {
+        brush: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2"><path d="M12 19l7-7 3 3-7 7-3-3z" /><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" /><path d="M2 2l7.586 7.586" /><circle cx="11" cy="11" r="2" /></svg>,
+        upload: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>,
+        sparkles: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2"><path d="M12 3v4m0 10v4M3 12h4m10 0h4M6.343 6.343l2.828 2.828m5.656 5.656l2.828 2.828M6.343 17.657l2.828-2.828m5.656-5.656l2.828-2.828" /></svg>,
+        download: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>,
+        gallery: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>,
+        trash: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>,
+        close: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>,
+        eraser: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2"><path d="M20 20H7L3 16c-.6-.6-.6-1.5 0-2.1l10-10c.6-.6 1.5-.6 2.1 0l5.9 5.9c.6.6.6 1.5 0 2.1L14 19" /><path d="M7 20l-4-4" /></svg>,
+        back: <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    };
+    return icons[name] || null;
+};
+
+// Component Crop Modal
+const CropModal = ({ src, onApply, onClose }) => {
+    const canvasRef = useRef(null);
+    const [cropSize] = useState(216);
+
+    useEffect(() => {
+        if (!src || !canvasRef.current) return;
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        img.onload = () => {
+            const size = Math.min(img.width, img.height);
+            const x = (img.width - size) / 2;
+            const y = (img.height - size) / 2;
+            canvas.width = cropSize;
+            canvas.height = cropSize;
+            ctx.drawImage(img, x, y, size, size, 0, 0, cropSize, cropSize);
+        };
+        img.src = src;
+    }, [src, cropSize]);
+
+    const handleApply = () => {
+        if (canvasRef.current) {
+            onApply(canvasRef.current.toDataURL('image/png'));
+        }
+    };
+
+    return (
+        <div className={styles.modal_overlay}>
+            <div className={styles.modal_content} style={{ width: '400px', height: 'auto', padding: '20px' }}>
+                <h3 style={{ margin: '0 0 16px', textAlign: 'center' }}>Cắt ảnh (Crop)</h3>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+                    <canvas ref={canvasRef} style={{ border: '1px solid #e5e7eb', borderRadius: '4px' }} />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                    <button onClick={onClose} className={styles.btn_outline} style={{ height: '32px', fontSize: '13px', padding: '0 12px' }}>Hủy</button>
+                    <button onClick={handleApply} className={styles.btn_primary} style={{ width: 'auto', height: '32px', fontSize: '13px', padding: '0 12px' }}>Sử dụng</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Component Drawing Canvas
+const DrawingCanvas = ({ canvasRef, uploadedImage, setHasDrawing, onClearAll }) => {
+    const [isDrawing, setIsDrawing] = useState(false);
+    const [brushSize, setBrushSize] = useState(2);
+    const [isEraser, setIsEraser] = useState(false);
+
+    useEffect(() => {
+        if (!canvasRef.current) return;
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        canvas.width = 500;
+        canvas.height = 500;
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        if (uploadedImage) {
+            const img = new Image();
+            img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            img.src = uploadedImage;
+        }
+    }, [uploadedImage, canvasRef]);
+
+    const startDrawing = (e) => {
+        setIsDrawing(true);
+        const ctx = canvasRef.current.getContext('2d');
+        ctx.beginPath();
+        const rect = canvasRef.current.getBoundingClientRect();
+        ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    };
+
+    const draw = (e) => {
+        if (!isDrawing) return;
+        const ctx = canvasRef.current.getContext('2d');
+        const rect = canvasRef.current.getBoundingClientRect();
+        ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+        ctx.strokeStyle = isEraser ? '#ffffff' : '#000000';
+        ctx.lineWidth = brushSize;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+        setHasDrawing(true);
+    };
+
+    return (
+        <>
+            <div className={styles.canvas_wrapper}>
+                <canvas
+                    ref={canvasRef}
+                    onMouseDown={startDrawing}
+                    onMouseMove={draw}
+                    onMouseUp={() => setIsDrawing(false)}
+                    onMouseLeave={() => setIsDrawing(false)}
+                    style={{ width: '500px', height: '500px', cursor: 'crosshair' }}
+                />
+            </div>
+
+            {/* Floating Toolbar */}
+            <div className={styles.floating_tools}>
+                <div
+                    className={styles.tool_item}
+                    onClick={() => setIsEraser(false)}
+                    style={{
+                        background: !isEraser ? '#e5e7eb' : 'transparent',
+                        padding: '6px 10px',
+                        borderRadius: '6px'
+                    }}
+                >
+                    <Icon name="brush" size={16} />
+                    <span style={{ fontSize: '12px', fontWeight: 600 }}>Cọ vẽ</span>
+                </div>
+                <div
+                    className={styles.tool_item}
+                    onClick={() => setIsEraser(true)}
+                    style={{
+                        background: isEraser ? '#e5e7eb' : 'transparent',
+                        padding: '6px 10px',
+                        borderRadius: '6px'
+                    }}
+                >
+                    <Icon name="eraser" size={16} />
+                    <span style={{ fontSize: '12px', fontWeight: 600 }}>Tẩy</span>
+                </div>
+                <input
+                    type="range"
+                    min="1"
+                    max="30"
+                    value={brushSize}
+                    onChange={(e) => setBrushSize(Number(e.target.value))}
+                    className={styles.size_slider}
+                    title="Kích thước"
+                />
+                <div className={styles.tool_item} onClick={onClearAll} style={{ color: '#ef4444' }}>
+                    <Icon name="trash" size={16} color="#ef4444" />
+                    <span style={{ fontSize: '12px', fontWeight: 600 }}>Xóa hết</span>
+                </div>
+            </div>
+        </>
+    );
+};
+
+// Component Gallery Modal
+const GalleryModal = ({ isOpen, onClose, collection, loading, onRefresh }) => {
+    if (!isOpen) return null;
+
+    const handleDelete = async (id) => {
+        if (!window.confirm('Bạn có chắc muốn xóa mẫu này?')) return;
+        const result = await deleteFromCollection(id);
+        if (result.success) {
+            onRefresh();
+        } else {
+            alert('Lỗi xóa: ' + result.error);
+        }
+    };
+
+    return (
+        <div className={styles.modal_overlay}>
+            <div className={styles.modal_content}>
+                <div className={styles.modal_header}>
+                    <div className={styles.modal_title}>Thư viện thiết kế ({collection.length})</div>
+                    <button onClick={onClose} className={styles.modal_close}>
+                        <Icon name="close" size={24} />
+                    </button>
+                </div>
+                <div className={styles.gallery_grid}>
+                    {loading ? (
+                        <p style={{ textAlign: 'center', width: '100%', color: '#6b7280' }}>Đang tải...</p>
+                    ) : collection.length === 0 ? (
+                        <p style={{ textAlign: 'center', width: '100%', color: '#9ca3af' }}>Chưa có mẫu nào.</p>
+                    ) : (
+                        collection.map((item, index) => (
+                            <div key={item.id || index} className={styles.gallery_item}>
+                                <img
+                                    src={convertGoogleDriveLink(item.drive_url)}
+                                    className={styles.gallery_img}
+                                    alt="Design"
+                                    onError={(e) => { e.target.src = 'https://via.placeholder.com/200x200?text=No+Image'; }}
+                                />
+                                <button
+                                    onClick={() => handleDelete(item.id)}
+                                    style={{
+                                        position: 'absolute',
+                                        top: '8px',
+                                        right: '8px',
+                                        width: '28px',
+                                        height: '28px',
+                                        borderRadius: '50%',
+                                        background: 'rgba(239, 68, 68, 0.9)',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        opacity: 0.7,
+                                        transition: 'opacity 0.2s',
+                                    }}
+                                    onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.7'; }}
+                                    title="Xóa"
+                                >
+                                    <Icon name="trash" size={14} color="#fff" />
+                                </button>
+                            </div>
+                        ))
+                    )}
+                </div>
+                <div style={{ padding: '16px 24px', borderTop: '1px solid #e5e7eb', textAlign: 'right' }}>
+                    <button className={styles.btn_outline} onClick={onRefresh} style={{ display: 'inline-flex' }}>
+                        Làm mới danh sách
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 const AIDesign = () => {
+    const navigate = useNavigate();
     const canvasRef = useRef(null);
     const fileInputRef = useRef(null);
 
@@ -11,367 +245,185 @@ const AIDesign = () => {
     const [uploadedImage, setUploadedImage] = useState(null);
     const [generatedResult, setGeneratedResult] = useState(null);
     const [isGenerating, setIsGenerating] = useState(false);
-    const [isDrawing, setIsDrawing] = useState(false);
-    const [brushSize, setBrushSize] = useState(5);
-    const [brushColor, setBrushColor] = useState('#000000');
-    const [tool, setTool] = useState('pen');
+    const [isSaving, setIsSaving] = useState(false);
 
-    // Initialize canvas
-    useEffect(() => {
-        if (!canvasRef.current) return;
+    // Gallery Logic
+    const [showGallery, setShowGallery] = useState(false);
+    const [collection, setCollection] = useState([]);
+    const [loadingCollection, setLoadingCollection] = useState(false);
 
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
+    // Crop Logic
+    const [cropSource, setCropSource] = useState(null);
 
-        canvas.width = 400;
-        canvas.height = 400;
-
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        if (uploadedImage) {
-            const img = new Image();
-            img.onload = () => {
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            };
-            img.src = uploadedImage;
-        }
-    }, [uploadedImage]);
-
-    // Drawing functions
-    const startDrawing = (e) => {
-        setIsDrawing(true);
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-
-        const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        const ctx = canvas.getContext('2d');
-
-        ctx.beginPath();
-        ctx.moveTo(
-            (e.clientX - rect.left) * scaleX,
-            (e.clientY - rect.top) * scaleY
-        );
+    const loadCollection = async () => {
+        setLoadingCollection(true);
+        try {
+            const result = await getStaffCollection();
+            if (result.success) setCollection(result.data || []);
+        } catch (err) { console.error(err); }
+        finally { setLoadingCollection(false); }
     };
 
-    const draw = (e) => {
-        if (!isDrawing) return;
-        const canvas = canvasRef.current;
-        if (!canvas) return;
+    useEffect(() => { loadCollection(); }, []);
 
-        const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        const ctx = canvas.getContext('2d');
-
-        ctx.lineTo(
-            (e.clientX - rect.left) * scaleX,
-            (e.clientY - rect.top) * scaleY
-        );
-        ctx.strokeStyle = tool === 'eraser' ? '#ffffff' : brushColor;
-        ctx.lineWidth = tool === 'eraser' ? brushSize * 3 : brushSize;
-        ctx.lineCap = 'round';
-        ctx.stroke();
-        setHasDrawing(true);
-    };
-
-    const stopDrawing = () => {
-        setIsDrawing(false);
-    };
-
-    // Touch events
-    const handleTouchStart = (e) => {
-        e.preventDefault();
-        const touch = e.touches[0];
-        startDrawing({ clientX: touch.clientX, clientY: touch.clientY });
-    };
-
-    const handleTouchMove = (e) => {
-        e.preventDefault();
-        const touch = e.touches[0];
-        draw({ clientX: touch.clientX, clientY: touch.clientY });
-    };
-
-    // Clear canvas
-    const handleClear = () => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        setHasDrawing(false);
-        setUploadedImage(null);
-        setGeneratedResult(null);
-    };
-
-    // Upload image
     const handleFileUpload = (e) => {
         const file = e.target.files?.[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = canvasRef.current;
-                if (!canvas) return;
-
-                const ctx = canvas.getContext('2d');
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
-                const x = (canvas.width - img.width * scale) / 2;
-                const y = (canvas.height - img.height * scale) / 2;
-
-                ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
-                setHasDrawing(true);
-                setUploadedImage(event.target.result);
-            };
-            img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-        e.target.value = '';
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (ev) => setCropSource(ev.target.result);
+            reader.readAsDataURL(file);
+        }
     };
 
-    // Generate AI art using API
     const handleGenerate = async () => {
-        if (!hasDrawing && !uploadedImage) {
-            alert('Hãy vẽ hoặc tải lên một hình ảnh trước!');
-            return;
-        }
-
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-
+        if (!hasDrawing && !uploadedImage) return alert('Vui lòng vẽ hoặc tải ảnh lên!');
         setIsGenerating(true);
-
-        const result = await generateAIArt(canvas);
-
-        if (result.success) {
-            setGeneratedResult(result.data);
-        } else {
-            alert('Không thể kết nối đến AI server. ' + (result.error || ''));
-        }
-
-        setIsGenerating(false);
+        try {
+            const result = await generateAIArt(canvasRef.current);
+            if (result.success) setGeneratedResult(result.data);
+            else alert(result.error || 'Lỗi tạo ảnh');
+        } catch (err) { console.error(err); }
+        finally { setIsGenerating(false); }
     };
 
-    // Download result
-    const handleDownload = () => {
+    const handleSave = async () => {
         if (!generatedResult) return;
-
-        const link = document.createElement('a');
-        link.href = generatedResult;
-        link.download = 'ai-bag-design.png';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        setIsSaving(true);
+        try {
+            const res = await fetch(generatedResult);
+            const blob = await res.blob();
+            const file = new File([blob], 'design.png', { type: 'image/png' });
+            const result = await saveToCollection(file, '');
+            if (result.success) {
+                alert('✅ Đã lưu thành công vào bộ sưu tập!');
+                loadCollection();
+            } else {
+                // Kiểm tra lỗi quyền
+                if (result.error && (result.error.includes('403') || result.error.includes('permission'))) {
+                    alert('⚠️ Bạn không có quyền lưu vào bộ sưu tập.\n\nTính năng này chỉ dành cho tài khoản Staff/Admin.\nVui lòng liên hệ quản trị viên để được cấp quyền.');
+                } else {
+                    alert('❌ Lỗi khi lưu: ' + (result.error || 'Không xác định'));
+                }
+            }
+        } catch (err) {
+            console.error(err);
+            alert('❌ Đã xảy ra lỗi khi lưu. Vui lòng thử lại sau.');
+        }
+        finally { setIsSaving(false); }
     };
 
-    const colors = ['#000000', '#ffffff', '#c9a227', '#e74c3c', '#3498db', '#2ecc71', '#9b59b6', '#f39c12'];
+    const handleClear = () => {
+        setUploadedImage(null);
+        setGeneratedResult(null);
+        setHasDrawing(false);
+    };
 
     return (
-        <div className="ai-design-page">
-            <div className="container">
-                {/* Header */}
-                <div className="ai-header">
-                    <div className="ai-header-content">
-                        <h1>
-                            <span className="sparkle">✨</span>
-                            AI Thiết Kế Túi Xách
-                        </h1>
-                        <p>Vẽ ý tưởng hoặc tải ảnh lên, AI sẽ biến thành thiết kế túi xách độc đáo</p>
-                    </div>
-                    <Link to="/products" className="back-link">
-                        ← Quay lại sản phẩm
-                    </Link>
+        <div className={styles.studio_container}>
+            {/* HEADER */}
+            <header className={styles.header}>
+                <div className={styles.brand}>
+                    <button
+                        className={styles.btn_outline}
+                        onClick={() => navigate('/products')}
+                        style={{ marginRight: '10px', height: '32px', padding: '0 8px' }}
+                    >
+                        <Icon name="back" size={16} /> Thoát
+                    </button>
+                    <Icon name="sparkles" /> AI Design Studio
+                </div>
+                <div className={styles.header_actions}>
+                    <button
+                        className={styles.btn_outline}
+                        onClick={() => { setShowGallery(true); loadCollection(); }}
+                    >
+                        <Icon name="gallery" /> Bộ sưu tập
+                    </button>
+                </div>
+            </header>
+
+            {/* MAIN WORKSPACE */}
+            <div className={styles.workspace}>
+                {/* LEFT: CANVAS */}
+                <div className={styles.canvas_section}>
+                    <DrawingCanvas
+                        canvasRef={canvasRef}
+                        uploadedImage={uploadedImage}
+                        setHasDrawing={setHasDrawing}
+                        onClearAll={handleClear}
+                    />
                 </div>
 
-                {/* Main Content */}
-                <div className="ai-main">
-                    {/* Drawing Panel */}
-                    <div className="ai-panel drawing-panel">
-                        <div className="panel-header">
-                            <h3>🎨 Bản vẽ của bạn</h3>
-                            <div className="panel-actions">
-                                <button
-                                    className="btn-upload"
-                                    onClick={() => fileInputRef.current?.click()}
-                                >
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                        <polyline points="17 8 12 3 7 8" />
-                                        <line x1="12" y1="3" x2="12" y2="15" />
-                                    </svg>
-                                    Tải ảnh
-                                </button>
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleFileUpload}
-                                    style={{ display: 'none' }}
-                                />
+                {/* RIGHT: CONTROLS */}
+                <div className={styles.control_panel}>
+                    {/* Block 1: Input */}
+                    <div className={styles.panel_block}>
+                        <div className={styles.block_title}>Nguồn Ảnh</div>
+                        <div className={styles.upload_box} onClick={() => fileInputRef.current?.click()}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                                <Icon name="upload" size={24} color="#6b7280" />
+                                <span style={{ fontSize: '13px', color: '#374151' }}>Tải ảnh lên để vẽ đè</span>
                             </div>
+                            <input ref={fileInputRef} type="file" hidden accept="image/*" onChange={handleFileUpload} />
                         </div>
+                    </div>
 
-                        {/* Tools */}
-                        <div className="drawing-tools">
-                            <div className="tool-group">
-                                <button
-                                    className={`tool-btn ${tool === 'pen' ? 'active' : ''}`}
-                                    onClick={() => setTool('pen')}
-                                    title="Bút vẽ"
-                                >
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M12 19l7-7 3 3-7 7-3-3z" />
-                                        <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
-                                    </svg>
-                                </button>
-                                <button
-                                    className={`tool-btn ${tool === 'eraser' ? 'active' : ''}`}
-                                    onClick={() => setTool('eraser')}
-                                    title="Tẩy"
-                                >
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M20 20H7L3 16l9-9 8 8-3 3" />
-                                        <path d="M6 11l8 8" />
-                                    </svg>
-                                </button>
-                            </div>
-
-                            <div className="tool-group">
-                                <label>Size:</label>
-                                <input
-                                    type="range"
-                                    min="1"
-                                    max="20"
-                                    value={brushSize}
-                                    onChange={(e) => setBrushSize(Number(e.target.value))}
-                                    className="size-slider"
-                                />
-                                <span className="size-value">{brushSize}</span>
-                            </div>
-
-                            <div className="color-palette">
-                                {colors.map(color => (
-                                    <button
-                                        key={color}
-                                        className={`color-btn ${brushColor === color ? 'active' : ''}`}
-                                        style={{ backgroundColor: color }}
-                                        onClick={() => setBrushColor(color)}
-                                    />
-                                ))}
-                            </div>
-
-                            <button className="clear-btn" onClick={handleClear} title="Xóa tất cả">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <polyline points="3 6 5 6 21 6" />
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                </svg>
-                            </button>
-                        </div>
-
-                        {/* Canvas */}
-                        <div className="canvas-wrapper">
-                            <canvas
-                                ref={canvasRef}
-                                onMouseDown={startDrawing}
-                                onMouseMove={draw}
-                                onMouseUp={stopDrawing}
-                                onMouseLeave={stopDrawing}
-                                onTouchStart={handleTouchStart}
-                                onTouchMove={handleTouchMove}
-                                onTouchEnd={stopDrawing}
-                                className="drawing-canvas"
-                            />
-                        </div>
-
-                        {/* Generate Button */}
+                    {/* Block 2: Action */}
+                    <div className={styles.panel_block}>
                         <button
-                            className={`generate-btn ${isGenerating ? 'generating' : ''}`}
+                            className={styles.btn_primary}
                             onClick={handleGenerate}
-                            disabled={isGenerating || (!hasDrawing && !uploadedImage)}
+                            disabled={isGenerating}
                         >
-                            {isGenerating ? (
-                                <>
-                                    <span className="spinner"></span>
-                                    Đang tạo...
-                                </>
-                            ) : (
-                                <>
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                                    </svg>
-                                    Tạo thiết kế AI
-                                </>
-                            )}
+                            <Icon name="sparkles" />
+                            {isGenerating ? 'Đang sáng tạo...' : 'Tạo Thiết Kế AI'}
                         </button>
                     </div>
 
-                    {/* Result Panel */}
-                    <div className="ai-panel result-panel">
-                        <div className="panel-header">
-                            <h3>🎁 Kết quả AI</h3>
-                            {generatedResult && (
-                                <button className="btn-download" onClick={handleDownload}>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                        <polyline points="7 10 12 15 17 10" />
-                                        <line x1="12" y1="15" x2="12" y2="3" />
-                                    </svg>
-                                    Tải về
-                                </button>
+                    {/* Block 3: Result */}
+                    <div className={styles.panel_block} style={{ borderBottom: 'none', flex: 1 }}>
+                        <div className={styles.block_title}>Kết quả</div>
+                        <div className={styles.result_box}>
+                            {generatedResult ? (
+                                <img src={generatedResult} alt="Result" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                            ) : (
+                                <div style={{ textAlign: 'center', padding: '20px' }}>
+                                    <Icon name="sparkles" size={40} color="#e5e7eb" />
+                                    <p className={styles.placeholder_text}>Kết quả sẽ hiện ở đây</p>
+                                </div>
                             )}
                         </div>
 
-                        <div className="result-area">
-                            {isGenerating ? (
-                                <div className="result-placeholder generating">
-                                    <div className="ai-loader">
-                                        <div className="loader-circle"></div>
-                                        <div className="loader-circle"></div>
-                                        <div className="loader-circle"></div>
-                                    </div>
-                                    <h4>AI đang sáng tạo...</h4>
-                                    <p>Vui lòng chờ trong giây lát</p>
-                                </div>
-                            ) : generatedResult ? (
-                                <div className="result-image">
-                                    <img src={generatedResult} alt="AI Generated Design" />
-                                </div>
-                            ) : (
-                                <div className="result-placeholder">
-                                    <div className="placeholder-icon">
-                                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                                            <circle cx="8.5" cy="8.5" r="1.5" />
-                                            <polyline points="21 15 16 10 5 21" />
-                                        </svg>
-                                    </div>
-                                    <h4>Sẵn sàng tạo thiết kế</h4>
-                                    <p>Vẽ ý tưởng hoặc tải ảnh lên,<br />sau đó nhấn "Tạo thiết kế AI"</p>
-                                </div>
-                            )}
-                        </div>
+                        {generatedResult && (
+                            <button
+                                className={styles.btn_primary}
+                                style={{ marginTop: '16px', backgroundColor: '#ffffff', color: '#111827', border: '1px solid #e5e7eb' }}
+                                onClick={handleSave}
+                                disabled={isSaving}
+                            >
+                                <Icon name="download" /> {isSaving ? 'Đang lưu...' : 'Lưu mẫu này'}
+                            </button>
+                        )}
                     </div>
                 </div>
-
-                {/* Tips */}
-                <div className="ai-tips">
-                    <h4>💡 Mẹo để có kết quả tốt nhất:</h4>
-                    <ul>
-                        <li>Vẽ hình dạng cơ bản của túi bạn muốn</li>
-                        <li>Thêm các chi tiết như quai, khóa, họa tiết</li>
-                        <li>Tải lên ảnh mẫu túi bạn thích để AI tham khảo</li>
-                        <li>Thử nghiệm nhiều lần để có thiết kế ưng ý</li>
-                    </ul>
-                </div>
             </div>
+
+            {/* MODALS */}
+            {cropSource && (
+                <CropModal
+                    src={cropSource}
+                    onApply={(url) => { setUploadedImage(url); setHasDrawing(true); setCropSource(null); }}
+                    onClose={() => setCropSource(null)}
+                />
+            )}
+
+            <GalleryModal
+                isOpen={showGallery}
+                onClose={() => setShowGallery(false)}
+                collection={collection}
+                loading={loadingCollection}
+                onRefresh={loadCollection}
+            />
         </div>
     );
 };

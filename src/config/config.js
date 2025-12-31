@@ -3,17 +3,17 @@
 
 const config = {
     // Backend API URL
-    API_BASE_URL: 'https://necessarily-neon-grammar-harmony.trycloudflare.com',
+    API_BASE_URL: 'http://192.168.23.254:8000',
 
     // AI Generate API URL (riêng)
-    AI_API_URL: 'http://localhost:8080',
+    AI_API_URL: 'http://192.168.23.254:8080',
 
     // API Endpoints
     ENDPOINTS: {
         // Auth
         LOGIN: '/api/login/',
-        REGISTER: '/api/auth/register/',
-        LOGOUT: '/api/auth/logout/',
+        REGISTER: '/api/register/',
+        LOGOUT: '/api/logout/',
 
         // Products
         PRODUCTS: '/api/products/',
