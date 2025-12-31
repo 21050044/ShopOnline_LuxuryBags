@@ -3,7 +3,7 @@ const config = {
     API_BASE_URL: 'https://indicated-climbing-marketing-explanation.trycloudflare.com',
 
     // AI Generate API URL (riêng)
-    AI_API_URL: 'http://localhost:8080',
+    AI_API_URL: 'https://4c5757b9dd01.ngrok-free.app',
 
     // API Endpoints
     ENDPOINTS: {
