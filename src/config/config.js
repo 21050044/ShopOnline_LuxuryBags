@@ -9,8 +9,8 @@ const config = {
     ENDPOINTS: {
         // Auth
         LOGIN: '/api/login/',
-        REGISTER: '/api/auth/register/',
-        LOGOUT: '/api/auth/logout/',
+        REGISTER: '/api/register/',
+        LOGOUT: '/api/logout/',
 
         // Products
         PRODUCTS: '/api/products/',
