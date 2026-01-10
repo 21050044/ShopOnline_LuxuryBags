@@ -95,19 +95,6 @@
     font-weight: 500;
 }
 
-.demo-note {
-    margin-top: var(--spacing-lg);
-    padding: var(--spacing-md);
-    background: var(--gray-50);
-    border-radius: var(--radius-md);
-    text-align: center;
-}
-
-.demo-note p {
-    font-size: 0.8rem;
-    color: var(--gray-500);
-}
-
 @media (max-width: 480px) {
     .auth-card {
         padding: var(--spacing-lg);

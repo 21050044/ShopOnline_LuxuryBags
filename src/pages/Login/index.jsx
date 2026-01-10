@@ -98,10 +98,6 @@ const Login = () => {
                     <div className="auth-footer">
                         <p>Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link></p>
                     </div>
-
-                    <div className="demo-note">
-                        <p><strong>Demo:</strong> Nhập bất kỳ email/password để đăng nhập</p>
-                    </div>
                 </div>
             </div>
         </div>

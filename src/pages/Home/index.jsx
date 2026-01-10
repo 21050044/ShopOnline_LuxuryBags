@@ -42,7 +42,7 @@ const Home = () => {
                     <div className="hero-overlay"></div>
                 </div>
                 <div className="hero-content">
-                    <span className="hero-badge">Bộ sưu tập mới 2024</span>
+                    <span className="hero-badge">Bộ sưu tập mới 2025</span>
                     <h1 className="hero-title">
                         Túi Xách <span className="text-accent">Cao Cấp</span>
                     </h1>
@@ -68,7 +68,7 @@ const Home = () => {
                         <span className="stat-label">Sản phẩm</span>
                     </div>
                     <div className="stat-item">
-                        <span className="stat-number">10K+</span>
+                        <span className="stat-number">400+</span>
                         <span className="stat-label">Khách hàng</span>
                     </div>
                     <div className="stat-item">
@@ -150,7 +150,7 @@ const Home = () => {
                         </div>
                     ) : (
                         <div className="products-grid">
-                            {featuredProducts.slice(0, 8).map((product) => (
+                            {featuredProducts.slice(0, 6).map((product) => (
                                 <ProductCard key={product.id} product={product} />
                             ))}
                         </div>
