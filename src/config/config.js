@@ -1,6 +1,6 @@
 const config = {
     // Backend API URL
-    API_BASE_URL: 'https://fairfield-prescription-wing-unix.trycloudflare.com',
+    API_BASE_URL: 'https://performing-alarm-afternoon-liverpool.trycloudflare.com',
 
     // AI Generate API URL (riêng)
     AI_API_URL: 'https://00b228d072b6.ngrok-free.app',
